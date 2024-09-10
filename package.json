@@ -4,10 +4,11 @@
   "description": "",
   "type": "module",
   "scripts": {
+    "dev": "node ./src/dev.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "José Pinheiro",
   "license": "ISC",
   "devDependencies": {
     "jest": "^29.6.2"
