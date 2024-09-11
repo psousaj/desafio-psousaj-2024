@@ -1,64 +1,67 @@
-import { animaisTipos, biomasTipo } from "./tipos.js";
+import { animaisTipos } from "./tipos.js";
 
-function gerarHabitat(bioma, tamanhoMaximo, animaisExistentes) {
-    return {
-        bioma: bioma,
-        capacidade: tamanhoMaximo,
-        animaisExistentes
-    }
-}
-
-const gerarAnimal = (tipo) => {
-    const newTipo = animaisTipos[tipo.toUpperCase()];
-
-    // Verifica se o tipo existe no objeto animaisTipos
-    if (!newTipo) {
-        throw new Error('Animal inválido');
+class Animal {
+    constructor(tipo) {
+        this.tipo = animaisTipos[tipo.toUpperCase()];
+        if (!this.tipo) {
+            throw new Error('Animal inválido');
+        }
+        this.espacoOcupado = this.pegarTamanhoPadrao(this.tipo);
     }
 
-    function pegarTamanhoPadrao(tipo) {
+    pegarTamanhoPadrao(tipo) {
         switch (tipo.toLowerCase()) {
-            case 'macaco':
-                return 1;
-            case 'leao':
-                return 3;
-            case 'leopardo':
-                return 2;
-            case 'crocodilo':
-                return 3;
-            case 'gazela':
-                return 2;
-            case 'hipopotamo':
-                return 4;
-            default:
-                throw new Error('Animal inválido');
+            case 'macaco': return 1;
+            case 'leao': return 3;
+            case 'leopardo': return 2;
+            case 'crocodilo': return 3;
+            case 'gazela': return 2;
+            case 'hipopotamo': return 4;
+            default: throw new Error('Animal inválido');
         }
     }
+}
 
-    return { tipo: newTipo, espacoOcupado: pegarTamanhoPadrao(tipo) };
-};
+class Habitat {
+    constructor(bioma, capacidade, animaisExistentes = []) {
+        this.bioma = bioma;
+        this.capacidade = capacidade;
+        this.animaisExistentes = animaisExistentes;
+    }
 
-// Acho que seria interessante ter um repositório salvando e gerando os números sequencialmente
-// mas para simplificar, um objeto com os números à mão é razoável porém não escala
-const habitatsExistentesMock = {
-    1: gerarHabitat(biomasTipo.SAVANA, 10, [gerarAnimal('macaco'), gerarAnimal('macaco'), gerarAnimal('macaco')]),
-    2: gerarHabitat(biomasTipo.FLORESTA, 5),
-    3: gerarHabitat(biomasTipo.SAVANA_E_RIO, 7, [gerarAnimal('gazela')]),
-    4: gerarHabitat(biomasTipo.RIO, 8),
-    5: gerarHabitat(biomasTipo.SAVANA, 9, [gerarAnimal('leao')]),
-};
+    espacoOcupado() {
+        let espacoOcupadoTotal = 0;
+        for (const animal of this.animaisExistentes) {
+            espacoOcupadoTotal += animal.espacoOcupado;
+        }
+        // Caso especial onde tem mais de uma especie no habitat
+        const tiposDeAnimais = this.animaisExistentes.map(obj => obj.tipo)
+        if (new Set(tiposDeAnimais).size > 1) {
+            espacoOcupadoTotal++;
+        }
+        return espacoOcupadoTotal;
+    }
+
+    temEspacoSuficiente(novoAnimal, quantidade) {
+        const espacoNecessario = (novoAnimal.espacoOcupado * quantidade) + this.espacoOcupado();
+        return espacoNecessario <= this.capacidade;
+    }
+
+    adicionarAnimais(novoAnimal, quantidade) {
+        for (let i = 0; i < quantidade; i++) {
+            this.animaisExistentes.push(novoAnimal);
+        }
+    }
+}
+
+const gerarAnimal = (tipo) => new Animal(tipo);
 
 const animaisPorBioma = {
-    savana: ['leao', 'leopardo', 'gazela', 'hipopotamo'],
+    savana: ['leao', 'leopardo', 'gazela', 'hipopotamo', 'macaco'],
     rio: ['crocodilo', 'hipopotamo'],
     floresta: ['macaco'],
-}
-const animaisCarnívoros = ['leao', 'leopardo']
+};
 
-export {
-    gerarAnimal,
-    gerarHabitat,
-    habitatsExistentesMock as habitatsExistentes,
-    animaisPorBioma,
-    animaisCarnívoros
-}
+const animaisCarnivoros = ['leao', 'leopardo', 'crocodilo'];
+
+export { gerarAnimal, animaisPorBioma, animaisCarnivoros, Habitat };

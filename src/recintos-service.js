@@ -1,47 +1,91 @@
-import {
-    gerarAnimal,
-    habitatsExistentes,
-    animaisCarnívoros,
-    animaisPorBioma
-} from "./recintos-repository.js";
+import { gerarAnimal, animaisCarnivoros, animaisPorBioma } from "./recintos-repository.js";
 
-function procurarHabitatsCompativeis(biomasCompativeis) {
+function procurarHabitatsCompativeis(biomasCompativeis, habitatsExistentes) {
     let habitatsDisponiveis = new Map();
     for (const bioma of biomasCompativeis) {
         for (const [habitatNumero, habitatExistente] of Object.entries(habitatsExistentes)) {
-            // includes porque pode haver habitats mistos
-            // Ex: savana e rio
             if (habitatExistente.bioma.includes(bioma)) {
-                habitatsDisponiveis.set(
-                    Number.parseInt(habitatNumero),
-                    habitatExistente,
-                )
+                habitatsDisponiveis.set(Number(habitatNumero), habitatExistente);
             }
-        };
+        }
     }
-    return habitatsDisponiveis
+    return habitatsDisponiveis;
 }
 
 function procurarBiomasCompativeis(novoAnimal) {
     let biomasCompativeis = [];
-    for (const [bioma, dados] of Object.entries(animaisPorBioma)) {
-        if (dados.includes(novoAnimal.tipo)) {
-            biomasCompativeis.push(bioma)
+    for (const [bioma, animais] of Object.entries(animaisPorBioma)) {
+        if (animais.includes(novoAnimal.tipo)) {
+            biomasCompativeis.push(bioma);
         }
-    };
-    return biomasCompativeis
+    }
+    return biomasCompativeis;
 }
 
-// Onde irei aplicar as regras do negócio
-function recintosService(tipoAnimal, quantidade) {
-    const novoAnimal = gerarAnimal(tipoAnimal)
-    const biomasCompativeis = procurarBiomasCompativeis(novoAnimal);
-    const habitatsCompativeis = procurarHabitatsCompativeis(biomasCompativeis);
-
-    for (const [numero, habitat] of habitatsCompativeis) {
-        console.log(habitat)
+function adicionarAnimalAoHabitat(novoAnimal, quantidade, habitat) {
+    if (habitat.temEspacoSuficiente(novoAnimal, quantidade)) {
+        habitat.adicionarAnimais(novoAnimal, quantidade);
+        const espacoLivre = habitat.capacidade - habitat.espacoOcupado();
+        return { espacoLivre, capacidade: habitat.capacidade };
     }
-    // console.log(habitatsCompativeis)
-};
+    return null;
+}
 
-export { recintosService }
+function verificarCompatibilidadeCarnivoros(habitat, novoAnimal) {
+    const novoAnimalECarcivoro = animaisCarnivoros.includes(novoAnimal.tipo);
+
+    if (novoAnimalECarcivoro) {
+        for (const animalExistente of habitat.animaisExistentes) {
+            if (animaisCarnivoros.includes(animalExistente.tipo) && animalExistente.tipo !== novoAnimal.tipo) {
+                return false; // carnívoro diferente, incompatível
+            }
+        }
+
+        for (const animalExistente of habitat.animaisExistentes) {
+            if (!animaisCarnivoros.includes(animalExistente.tipo)) {
+                return false; // animal não carnívoro, incompatível
+            }
+        }
+    } else {
+        // Verifica se o habitat já contém carnívoros
+        for (const animalExistente of habitat.animaisExistentes) {
+            if (animaisCarnivoros.includes(animalExistente.tipo)) {
+                return false; // Há um carnívoro no habitat, incompatível
+            }
+        }
+    }
+
+    return true;
+}
+
+function recintosService(tipoAnimal, quantidade, habitatsExistentes) {
+    if (quantidade <= 0 || !Number.isInteger(quantidade)) {
+        return { erro: "Quantidade inválida" };
+    }
+
+    try {
+        const novoAnimal = gerarAnimal(tipoAnimal);
+        const biomasCompativeis = procurarBiomasCompativeis(novoAnimal);
+        const habitatsCompativeis = procurarHabitatsCompativeis(biomasCompativeis, habitatsExistentes);
+        const recintosViaveis = [];
+
+        for (const [numero, habitat] of habitatsCompativeis) {
+            if (verificarCompatibilidadeCarnivoros(habitat, novoAnimal)) {
+                const resultado = adicionarAnimalAoHabitat(novoAnimal, quantidade, habitat);
+                if (resultado) {
+                    recintosViaveis.push(`Recinto ${numero} (espaço livre: ${resultado.espacoLivre} total: ${resultado.capacidade})`);
+                }
+            }
+        }
+
+        if (recintosViaveis.length === 0) {
+            return { erro: "Não há recinto viável" };
+        }
+
+        return { recintosViaveis: recintosViaveis.sort() };
+    } catch (e) {
+        return { erro: e.message };
+    }
+}
+
+export { recintosService };
