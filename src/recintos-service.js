@@ -1,4 +1,9 @@
-import { gerarAnimal, animaisCarnivoros, animaisPorBioma } from "./recintos-repository.js";
+import { gerarAnimal, animaisPorBioma } from "./recintos-repository.js";
+import {
+    verificarCompatibilidadeCarnivoros,
+    verificarCompatibilidadeHipopotamo,
+    verificarCompatibilidadeMacaco
+} from "./casosDeUso.js";
 
 function procurarHabitatsCompativeis(biomasCompativeis, habitatsExistentes) {
     let habitatsDisponiveis = new Map();
@@ -31,33 +36,6 @@ function adicionarAnimalAoHabitat(novoAnimal, quantidade, habitat) {
     return null;
 }
 
-function verificarCompatibilidadeCarnivoros(habitat, novoAnimal) {
-    const novoAnimalECarcivoro = animaisCarnivoros.includes(novoAnimal.tipo);
-
-    if (novoAnimalECarcivoro) {
-        for (const animalExistente of habitat.animaisExistentes) {
-            if (animaisCarnivoros.includes(animalExistente.tipo) && animalExistente.tipo !== novoAnimal.tipo) {
-                return false; // carnívoro diferente, incompatível
-            }
-        }
-
-        for (const animalExistente of habitat.animaisExistentes) {
-            if (!animaisCarnivoros.includes(animalExistente.tipo)) {
-                return false; // animal não carnívoro, incompatível
-            }
-        }
-    } else {
-        // Verifica se o habitat já contém carnívoros
-        for (const animalExistente of habitat.animaisExistentes) {
-            if (animaisCarnivoros.includes(animalExistente.tipo)) {
-                return false; // Há um carnívoro no habitat, incompatível
-            }
-        }
-    }
-
-    return true;
-}
-
 function recintosService(tipoAnimal, quantidade, habitatsExistentes) {
     if (quantidade <= 0 || !Number.isInteger(quantidade)) {
         return { erro: "Quantidade inválida" };
@@ -70,7 +48,11 @@ function recintosService(tipoAnimal, quantidade, habitatsExistentes) {
         const recintosViaveis = [];
 
         for (const [numero, habitat] of habitatsCompativeis) {
-            if (verificarCompatibilidadeCarnivoros(habitat, novoAnimal)) {
+            if (
+                verificarCompatibilidadeCarnivoros(habitat, novoAnimal) &&
+                verificarCompatibilidadeHipopotamo(habitat, novoAnimal) &&
+                verificarCompatibilidadeMacaco(habitat, novoAnimal, quantidade)
+            ) {
                 const resultado = adicionarAnimalAoHabitat(novoAnimal, quantidade, habitat);
                 if (resultado) {
                     recintosViaveis.push(`Recinto ${numero} (espaço livre: ${resultado.espacoLivre} total: ${resultado.capacidade})`);
