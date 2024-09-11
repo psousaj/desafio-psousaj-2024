@@ -7,7 +7,7 @@ class RecintosZoo {
         this.habitatsExistentes = {
             1: new Habitat(biomasTipo.SAVANA, 10, Array.from({ length: 3 }, () => gerarAnimal('macaco'))),
             2: new Habitat(biomasTipo.FLORESTA, 5),
-            3: new Habitat(biomasTipo.SAVANA_E_RIO, 7, [gerarAnimal('gazela')]),
+            3: new Habitat([biomasTipo.SAVANA, biomasTipo.RIO], 7, [gerarAnimal('gazela')]),
             4: new Habitat(biomasTipo.RIO, 8),
             5: new Habitat(biomasTipo.SAVANA, 9, [gerarAnimal('leao')]),
         };

@@ -31,7 +31,7 @@ function verificarCompatibilidadeCarnivoros(habitat, novoAnimal) {
 function verificarCompatibilidadeHipopotamo(habitat, novoAnimal) {
     if (novoAnimal.tipo === animaisTipos.HIPOPOTAMO) {
         for (const animalExistente of habitat.animaisExistentes) {
-            if (animalExistente.tipo !== animaisTipos.HIPOPOTAMO && !['savanna', 'rio'].includes(habitat.bioma)) {
+            if (animalExistente.tipo !== animaisTipos.HIPOPOTAMO && recintoTipoSavanaERio(['savana', 'rio'], habitat.bioma)) {
                 return false; // Hipopótamo só tolera outras espécies em savana e rio
             }
         }
@@ -46,6 +46,25 @@ function verificarCompatibilidadeMacaco(habitat, novoAnimal, quantidade) {
         }
     }
     return true;
+}
+
+function recintoTipoSavanaERio(arrayDefault, biomaASerTestado) {
+    if (Array.isArray(biomaASerTestado)) {
+        if (arrayDefault.length !== biomaASerTestado.length) {
+            return false;
+        }
+        for (let i = 0; i < arrayDefault.length; i++) {
+            if (arrayDefault[i] !== biomaASerTestado[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    if (typeof biomaASerTestado === 'string') {
+        return arrayDefault.some(bioma => bioma.includes(biomaASerTestado));
+    }
+
+    return false;
 }
 
 export { verificarCompatibilidadeCarnivoros, verificarCompatibilidadeHipopotamo, verificarCompatibilidadeMacaco };
